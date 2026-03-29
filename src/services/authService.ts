@@ -18,10 +18,9 @@ export const AuthService = {
     return response.data;
   },
 
-  register: async (data: RegisterRequestDTO): Promise<string> => {
-    // Register controller actually returns String message instead of JSON according to usual convention, but let's assume it.
-    // If it returns a string like "User registered successfully", axios parses as string
-    const response = await apiClient.post<string>('/auth/register', data);
+  register: async (data: RegisterRequestDTO): Promise<UserResponseDTO> => {
+    // Backend returns UserResponseDTO upon successful registration
+    const response = await apiClient.post<UserResponseDTO>('/auth/register', data);
     return response.data;
   },
 
