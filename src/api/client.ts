@@ -1,11 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// In a real application, replace this with environment variables using react-native-dotenv or expo config.
-// Use your local IP mapped to your backend port for physical device testing.
-// e.g., 'http://192.168.1.55:8080' instead of localhost for testing on physical phone
-const BASE_URL = 'http://192.168.1.107:8080/api/v1'; // Default placeholder, replace with actual IP if testing on real phone. Or http://10.0.2.2:8080 for android emu, http://localhost:8080 for iOS sim.
-
+// Use localhost for iOS Simulator, 10.0.2.2 for Android Emulator, or your real IP (e.g., 192.168.1.107) for physical device
+const BASE_URL = 'http://localhost:8080/api/v1';
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   timeout: 10000, // 10 seconds timeout
