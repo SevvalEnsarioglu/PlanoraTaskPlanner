@@ -29,6 +29,11 @@ export const AuthService = {
     return response.data;
   },
 
+  updateProfile: async (data: import('../types').UserRequestDTO): Promise<UserResponseDTO> => {
+    const response = await apiClient.put<UserResponseDTO>('/auth/me', data);
+    return response.data;
+  },
+
   logout: async (): Promise<void> => {
     // Only local clearing since JWT is stateless on backend
     await AsyncStorage.removeItem('userToken');

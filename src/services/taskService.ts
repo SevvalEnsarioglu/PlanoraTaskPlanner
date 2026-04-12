@@ -4,9 +4,16 @@ import {
   TaskResponseDTO 
 } from '../types';
 
+export interface TaskFilters {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  completed?: boolean;
+}
+
 export const TaskService = {
-  getAll: async (userId: number): Promise<TaskResponseDTO[]> => {
-    const response = await apiClient.get<TaskResponseDTO[]>(`/users/${userId}/tasks`);
+  getAll: async (userId: number, filters?: TaskFilters): Promise<TaskResponseDTO[]> => {
+    const response = await apiClient.get<TaskResponseDTO[]>(`/users/${userId}/tasks`, { params: filters });
     return response.data;
   },
 
@@ -25,8 +32,8 @@ export const TaskService = {
     return response.data;
   },
 
-  complete: async (userId: number, taskId: number): Promise<TaskResponseDTO> => {
-    const response = await apiClient.patch<TaskResponseDTO>(`/users/${userId}/tasks/${taskId}/complete`);
+  complete: async (userId: number, taskId: number, completed: boolean): Promise<TaskResponseDTO> => {
+    const response = await apiClient.patch<TaskResponseDTO>(`/users/${userId}/tasks/${taskId}/complete?completed=${completed}`);
     return response.data;
   },
 
