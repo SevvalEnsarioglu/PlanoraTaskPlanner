@@ -1,203 +1,189 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useCallback } from 'react';
+import {
+  View, Text, FlatList, TouchableOpacity,
+  ActivityIndicator, Alert, Platform,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 
 import { useThemeStyles } from '../../src/hooks/useThemeStyles';
 import { getHomeStyles } from '../../src/styles/tabs/HomeStyles';
-import { TaskService, TaskFilters } from '../../src/services/taskService';
+import { TaskService } from '../../src/services/taskService';
 import { TaskResponseDTO } from '../../src/types';
-
-const FILTERS = [
-  { id: 'ALL', label: 'Tümü' },
-  { id: 'TODAY', label: 'Bugün' },
-  { id: 'UPCOMING', label: 'Yaklaşan' },
-  { id: 'COMPLETED', label: 'Tamamlanan' },
-];
 
 export default function HomeScreen() {
   const { styles, theme } = useThemeStyles(getHomeStyles);
-  const [activeFilter, setActiveFilter] = useState('TODAY');
-  const [tasks, setTasks] = useState<TaskResponseDTO[]>([]);
+  const router = useRouter();
+
+  const [tasks, setTasks]   = useState<TaskResponseDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<'all' | 'today' | 'upcoming'>('all');
 
-  // Initialize
-  useEffect(() => {
-    AsyncStorage.getItem('userId').then(id => {
-      if (id) setUserId(parseInt(id, 10));
-    });
-  }, []);
+  // ─── UserId yükle ──────────────────────────────────────────────────────────
+  const resolveUserId = useCallback(async (): Promise<number | null> => {
+    if (userId) return userId;
+    const stored = await AsyncStorage.getItem('userId');
+    if (!stored) return null;
+    const id = parseInt(stored, 10);
+    setUserId(id);
+    return id;
+  }, [userId]);
 
-  // Fetch Tasks
-  const fetchTasks = async () => {
-    if (!userId) return;
-    setLoading(true);
+  // ─── Görevleri Yükle ───────────────────────────────────────────────────────
+  const fetchTasks = useCallback(async () => {
     try {
-      let filters: TaskFilters = {};
-      const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
-      
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-      switch(activeFilter) {
-        case 'TODAY':
-          filters = { date: todayStr };
-          break;
-        case 'UPCOMING':
-          filters = { startDate: tomorrowStr };
-          break;
-        case 'COMPLETED':
-          filters = { completed: true };
-          break;
-      }
-      
-      const data = await TaskService.getAll(userId, filters);
+      setLoading(true);
+      const uid = await resolveUserId();
+      if (!uid) return;
+      const data = await TaskService.getAll(uid);   // ✅ doğru metod
       setTasks(data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      Alert.alert('Hata', 'Görevler yüklenirken bir sorun oluştu.');
+    } catch (err) {
+      console.error('Görevler yüklenemedi:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [resolveUserId]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (userId) fetchTasks();
-    }, [userId, activeFilter])
-  );
+  useFocusEffect(useCallback(() => { fetchTasks(); }, [fetchTasks]));
 
+  // ─── Tamamlandı Toggle ─────────────────────────────────────────────────────
   const toggleTaskCompletion = async (task: TaskResponseDTO) => {
-    if (!userId) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Optimistic Update
-    const updatedTasks = tasks.map(t => 
-      t.id === task.id ? { ...t, completed: !t.completed } : t
-    );
-    setTasks(updatedTasks);
-
     try {
-      await TaskService.complete(userId, task.id, !task.completed);
-      
-      // Kendi filtresini bozuyorsa listeden kaldırabiliriz veya durabilir. Durması animasyonu görmek için daha iyi.
-    } catch (error) {
-      // Revert if failed
-      setTasks(tasks);
+      const uid = await resolveUserId();
+      if (!uid) return;
+      await TaskService.update(uid, task.id, {   // ✅ doğru metod
+        title: task.title,
+        description: task.description,
+        dueDate: task.dueDate,
+        isCompleted: !task.isCompleted,
+        categoryId: task.category?.id,
+        priorityId: task.priority?.id,
+        tagIds: task.tags?.map(t => t.id) ?? [],
+      });
+      fetchTasks();
+    } catch {
       Alert.alert('Hata', 'Görev durumu güncellenemedi.');
     }
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Günaydın';
-    if (hour < 18) return 'Tünaydın';
-    return 'İyi Akşamlar';
-  };
+  // ─── Filtre ────────────────────────────────────────────────────────────────
+  const filteredTasks = tasks.filter(t => {
+    if (filter === 'all') return true;
+    const today = new Date().toISOString().split('T')[0];
+    const taskDay = t.dueDate ? new Date(t.dueDate).toISOString().split('T')[0] : '';
+    if (filter === 'today')    return taskDay === today;
+    if (filter === 'upcoming') return taskDay > today;
+    return true;
+  });
 
-  const formattedDate = new Intl.DateTimeFormat('tr-TR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long'
-  }).format(new Date());
-
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <Text style={styles.greeting}>{getGreeting()}, Şevval</Text>
-      <Text style={styles.title}>Görevlerin</Text>
-      <Text style={styles.dateText}>{formattedDate}</Text>
-    </View>
-  );
-
-  const renderFilters = () => (
-    <View style={{ height: 60 }}>
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterContainer}
-        data={FILTERS}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const isActive = activeFilter === item.id;
-          return (
-            <TouchableOpacity
-              style={[styles.filterPill, isActive && styles.filterPillActive]}
-              onPress={() => {
-                setActiveFilter(item.id);
-                Haptics.selectionAsync();
-              }}
-            >
-              <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
-    </View>
-  );
-
+  // ─── Kart ──────────────────────────────────────────────────────────────────
   const renderTaskItem = ({ item }: { item: TaskResponseDTO }) => {
-    const isCompleted = item.completed;
+    const isCompleted = item.isCompleted;
+    const accentColor = item.priority?.colorCode ?? theme.primary;
+    const priColor    = item.priority?.colorCode ?? theme.primary;
+    const catColor    = item.category?.colorCode ?? theme.textSecondary;
+    const hasMeta = !!(item.category || item.priority || item.tags?.length);
+
     return (
-      <View style={styles.taskCard}>
-        <View style={[styles.taskIndicator, { backgroundColor: theme.primary }]} />
-        
-        <TouchableOpacity 
-          style={styles.checkboxContainer} 
+      <TouchableOpacity
+        style={[styles.taskCard, { borderLeftWidth: 4, borderLeftColor: accentColor }]}
+        onPress={() => router.push({ pathname: '/task-detail', params: { taskId: item.id, userId } })}
+        activeOpacity={0.80}
+      >
+        {/* Checkbox */}
+        <TouchableOpacity
+          style={styles.checkboxContainer}
           onPress={() => toggleTaskCompletion(item)}
-          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <View style={[styles.checkbox, isCompleted && styles.checkboxActive]}>
-            {isCompleted && <Ionicons name="checkmark" size={16} color={theme.surface} />}
+            {isCompleted && <Ionicons name="checkmark" size={13} color="#FFF" />}
           </View>
         </TouchableOpacity>
 
+        {/* İçerik */}
         <View style={styles.taskContent}>
-          <Text style={[styles.taskTitle, isCompleted && styles.taskTitleCompleted]} numberOfLines={1}>
+          <Text style={[styles.taskTitle, isCompleted && styles.taskTitleCompleted]} numberOfLines={2}>
             {item.title}
           </Text>
-          <Text style={styles.taskCategory}>
-            {item.categoryId ? `Kategori ID: ${item.categoryId}` : 'Kategorisiz'}
-          </Text>
-          
-          <View style={styles.tagsContainer}>
-            {item.tagIds && item.tagIds.map(tagId => (
-              <View key={tagId} style={styles.tagBadge}>
-                <Text style={styles.tagText}>#{tagId}</Text>
-              </View>
-            ))}
-          </View>
+
+          {hasMeta && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 5, marginTop: 6 }}>
+              {/* Kategori */}
+              {item.category && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: catColor }} />
+                  <Text style={{ fontSize: 12, color: catColor, fontWeight: '500' }}>{item.category.name}</Text>
+                </View>
+              )}
+              {item.category && (item.priority || item.tags?.length) ? (
+                <Text style={{ fontSize: 12, color: theme.textSecondary, opacity: 0.4 }}>·</Text>
+              ) : null}
+              {/* Öncelik */}
+              {item.priority && (
+                <View style={{ backgroundColor: priColor + '18', borderRadius: 5, paddingHorizontal: 7, paddingVertical: 2 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '600', color: priColor }}>{item.priority.name}</Text>
+                </View>
+              )}
+              {item.priority && item.tags?.length ? (
+                <Text style={{ fontSize: 12, color: theme.textSecondary, opacity: 0.4 }}>·</Text>
+              ) : null}
+              {/* Etiketler */}
+              {item.tags?.map(tag => (
+                <Text key={tag.id} style={{ fontSize: 11, fontWeight: '500', color: tag.colorCode ?? theme.textSecondary }}>
+                  #{tag.name}
+                </Text>
+              ))}
+            </View>
+          )}
         </View>
-      </View>
+
+        <Ionicons name="chevron-forward" size={15} color={theme.textSecondary} style={{ opacity: 0.35, marginLeft: 4 }} />
+      </TouchableOpacity>
     );
   };
 
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {renderHeader()}
-      {renderFilters()}
+      <View style={styles.header}>
+        <Text style={styles.greeting}>Merhaba 👋</Text>
+        <Text style={styles.title}>Bugün Neler Var?</Text>
+      </View>
+
+      {/* Filtre Bar */}
+      <View style={{ flexDirection: 'row', paddingHorizontal: 24, marginBottom: 16, gap: 8 }}>
+        {(['all', 'today', 'upcoming'] as const).map(f => (
+          <TouchableOpacity
+            key={f}
+            onPress={() => { Haptics.selectionAsync(); setFilter(f); }}
+            style={[styles.filterPill, filter === f && styles.filterPillActive]}
+          >
+            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+              {f === 'all' ? 'Hepsi' : f === 'today' ? 'Bugün' : 'Gelecek'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {loading ? (
-        <View style={styles.emptyContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-        </View>
+        <ActivityIndicator size="large" color={theme.primary} style={{ marginTop: 60 }} />
       ) : (
         <FlatList
-          data={tasks}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
+          data={filteredTasks}
           renderItem={renderTaskItem}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons name="documents-outline" size={64} color={theme.textSecondary} />
-              <Text style={styles.emptyText}>Bu filtreye uygun görev bulunamadı.</Text>
+              <Ionicons name="cafe-outline" size={64} color={theme.border} />
+              <Text style={styles.emptyText}>Henüz bir görev yok 🎉</Text>
             </View>
           }
         />
