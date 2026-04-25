@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 import { ThemeColors, spacing, fonts } from '../theme';
 
 export const getProfileStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -6,112 +6,168 @@ export const getProfileStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    padding: spacing.xl,
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    paddingTop: 80,
-    marginBottom: spacing.xl,
+  scrollContent: {
+    paddingBottom: 120,
   },
-  avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  avatarText: {
-    fontSize: 40,
-    fontWeight: fonts.weights.bold,
-    color: colors.primary,
-  },
-  nameText: {
-    fontSize: fonts.sizes.xl,
-    fontWeight: fonts.weights.bold,
-    color: '#FFF',
-    marginBottom: 4,
-  },
-  usernameText: {
-    fontSize: fonts.sizes.sm,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  sectionTitleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-  },
-  sectionTitle: {
-    fontSize: fonts.sizes.lg,
+
+  // ─── Page Title ──────────────────────────────────────────────────────────
+  pageTitle: {
+    fontSize: fonts.sizes.xxl,
     fontWeight: fonts.weights.bold,
     color: colors.text,
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.background,
   },
-  editButton: {
-    padding: spacing.xs,
-  },
-  card: {
+
+  // ─── User Hero Card ───────────────────────────────────────────────────────
+  heroCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.xl,
-    paddingVertical: spacing.sm,
-    shadowColor: colors.isDark ? '#000' : colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: colors.isDark ? 0.3 : 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  listItem: {
+    marginBottom: spacing.md,
+    borderRadius: 18,
+    padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: colors.isDark ? 0.25 : 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  listItemNoBorder: {
-    borderBottomWidth: 0,
-  },
-  listIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.background,
+  avatarCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.isDark ? '#3a1f30' : '#F3E8F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: spacing.md,
   },
-  listContent: {
+  avatarText: {
+    fontSize: 24,
+    fontWeight: fonts.weights.bold,
+    color: colors.primary,
+  },
+  heroInfo: {
     flex: 1,
   },
-  listLabel: {
+  heroName: {
+    fontSize: fonts.sizes.lg,
+    fontWeight: fonts.weights.bold,
+    color: colors.text,
+    marginBottom: 3,
+  },
+  heroEmail: {
+    fontSize: fonts.sizes.sm,
+    color: colors.textSecondary,
+  },
+  heroEditBtn: {
+    padding: spacing.xs,
+  },
+
+  // ─── Menu Card ────────────────────────────────────────────────────────────
+  menuCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: 18,
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: colors.isDark ? 0.2 : 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  menuRowLast: {
+    borderBottomWidth: 0,
+  },
+  iconWrapper: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  menuLabel: {
+    flex: 1,
+    fontSize: fonts.sizes.md,
+    fontWeight: fonts.weights.medium,
+    color: colors.text,
+  },
+
+  // ─── Stats Card ───────────────────────────────────────────────────────────
+  statsCard: {
+    backgroundColor: colors.surface,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: 18,
+    padding: spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: colors.isDark ? 0.2 : 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statsTitle: {
+    fontSize: fonts.sizes.lg,
+    fontWeight: fonts.weights.bold,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 26,
+    fontWeight: fonts.weights.bold,
+    marginBottom: 4,
+  },
+  statLabel: {
     fontSize: fonts.sizes.xs,
     color: colors.textSecondary,
-    marginBottom: 2,
+    textAlign: 'center',
   },
-  listValue: {
-    fontSize: fonts.sizes.md,
-    color: colors.text,
-    fontWeight: fonts.weights.medium,
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.border,
+    marginVertical: 4,
   },
+
+  // ─── Logout ───────────────────────────────────────────────────────────────
   logoutButton: {
     flexDirection: 'row',
-    backgroundColor: colors.error + '15', // transparent error
-    marginHorizontal: spacing.lg,
-    padding: spacing.md,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.xl,
+    paddingVertical: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.error,
+    backgroundColor: colors.error + '10',
   },
   logoutText: {
     color: colors.error,
@@ -119,18 +175,27 @@ export const getProfileStyles = (colors: ThemeColors) => StyleSheet.create({
     fontWeight: fonts.weights.bold,
     marginLeft: spacing.sm,
   },
-  // Modal
+
+  // ─── Edit Modal ───────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
+  },
+  modalHandle: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -150,26 +215,28 @@ export const getProfileStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: fonts.sizes.sm,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
+    fontWeight: fonts.weights.medium,
   },
   input: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     color: colors.text,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: 12,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 13,
     fontSize: fonts.sizes.md,
   },
   saveButton: {
     backgroundColor: colors.primary,
-    padding: spacing.md,
-    borderRadius: 12,
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   saveButtonText: {
     color: '#FFF',
     fontSize: fonts.sizes.md,
     fontWeight: fonts.weights.bold,
-  }
+  },
 });
