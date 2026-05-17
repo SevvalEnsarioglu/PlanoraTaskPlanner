@@ -15,7 +15,6 @@ import { TaskService } from '../../src/services/taskService';
 import { PomodoroService } from '../../src/services/pomodoroService';
 import { TaskResponseDTO } from '../../src/types';
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
 const { width } = Dimensions.get('window');
 const RING_SIZE   = width * 0.72;
 const STROKE      = 10;
@@ -23,7 +22,6 @@ const RADIUS      = (RING_SIZE - STROKE) / 2;
 const CIRCUMF     = 2 * Math.PI * RADIUS;
 const DEFAULT_MIN = 25;
 
-// ─── State Machine ─────────────────────────────────────────────────────────────
 type Phase = 'idle' | 'running' | 'paused';
 
 export default function PomodoroScreen() {
@@ -32,22 +30,18 @@ export default function PomodoroScreen() {
   const colors  = isDark ? darkColors : lightColors;
   const BLUE    = '#4F46E5';
 
-  // Auth
   const [userId, setUserId] = useState<number | null>(null);
 
-  // Tasks
   const [tasks,         setTasks]         = useState<TaskResponseDTO[]>([]);
   const [selectedTask,  setSelectedTask]  = useState<TaskResponseDTO | null>(null);
   const [modalVisible,  setModalVisible]  = useState(false);
 
-  // Timer state
   const [phase,           setPhase]           = useState<Phase>('idle');
   const [timeLeft,        setTimeLeft]        = useState(DEFAULT_MIN * 60);
   const [durationMinutes, setDurationMinutes] = useState(DEFAULT_MIN); // kullanıcı seçimi
   const [editingDuration, setEditingDuration] = useState(false);
   const [editInput,       setEditInput]       = useState('');
 
-  // ── refs so Alert callbacks always see fresh values ─────────────────────────
   const phaseRef    = useRef<Phase>('idle');
   const timeLeftRef = useRef(DEFAULT_MIN * 60);
   const taskRef     = useRef<TaskResponseDTO | null>(null);
@@ -58,17 +52,14 @@ export default function PomodoroScreen() {
   const setPhaseSync = (p: Phase) => { phaseRef.current = p;   setPhase(p); };
   const setTimeSync  = (t: number) => { timeLeftRef.current = t; setTimeLeft(t); };
 
-  // Toplam süreyi hesapla (durationMinutes'a göre)
   const totalSec = durationMinutes * 60;
 
-  // ── resolve userId ──────────────────────────────────────────────────────────
   useEffect(() => {
     AsyncStorage.getItem('userId').then(v => {
       if (v) { const id = parseInt(v, 10); userIdRef.current = id; setUserId(id); }
     });
   }, []);
 
-  // ── fetch tasks ─────────────────────────────────────────────────────────────
   const fetchTasks = useCallback(async () => {
     const uid = userIdRef.current;
     if (!uid) return;
@@ -78,7 +69,6 @@ export default function PomodoroScreen() {
     } catch (e) { console.error('Görevler yüklenemedi', e); }
   }, []);
 
-  // timeLeft ref'ini totalSec ile senkronize tut (sadece idle'da)
   useEffect(() => {
     if (phase === 'idle') {
       timeLeftRef.current = totalSec;
@@ -88,7 +78,6 @@ export default function PomodoroScreen() {
 
   useFocusEffect(useCallback(() => { fetchTasks(); }, [fetchTasks]));
 
-  // ── tick ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (phase === 'running') {
       intervalRef.current = setInterval(() => {
@@ -100,7 +89,6 @@ export default function PomodoroScreen() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [phase]);
 
-  // ── core helpers ───────────────────────────────────────────────────────────
   const saveSession = async (workedSec: number) => {
     const uid  = userIdRef.current;
     const task = taskRef.current;
@@ -150,7 +138,6 @@ export default function PomodoroScreen() {
       .catch(() => Alert.alert('Hata', 'Süre kaydedilirken bir sorun oluştu.'));
   }, []);
 
-  // ── controls ───────────────────────────────────────────────────────────────
   const handleStart = () => {
     if (!taskRef.current) {
       Alert.alert('Görev Seçin', 'Lütfen önce bir görev seçin.');
@@ -204,7 +191,6 @@ export default function PomodoroScreen() {
       });
   };
 
-  // ── çift tıkla → süreyi düzenle ────────────────────────────────────────────
   const handleDurationDoubleTap = () => {
     if (phase !== 'idle') return; // sayaç çalışırken değiştirilemez
     setEditInput(String(durationMinutes));
@@ -222,21 +208,18 @@ export default function PomodoroScreen() {
     Keyboard.dismiss();
   };
 
-  // ── select task ─────────────────────────────────────────────────────────────
   const pickTask = (task: TaskResponseDTO) => {
     taskRef.current = task;
     setSelectedTask(task);
     setModalVisible(false);
   };
 
-  // ── derived ───────────────────────────────────────────────────────────────
   const progress   = timeLeft / totalSec;  // 1→0
   const dashOffset = CIRCUMF * progress;   // full→0
 
   const formatTime = (sec: number) =>
     `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
-  // ─── UI ────────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, paddingHorizontal: 28, paddingTop: 20 }}>
