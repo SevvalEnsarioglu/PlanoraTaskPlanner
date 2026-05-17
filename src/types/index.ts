@@ -126,6 +126,11 @@ export interface UserResponseDTO {
 export interface StatisticsResponseDTO {
   totalCompletedTasks: number;
   weeklyCompletedTasks: number;
-  categoryDistribution: Record<string, number>; // Map<String, Long> -> Record<string, number>
+  categoryDistribution: Record<string, number>;
   totalPomodoroMinutes: number;
+  pendingTasks: number;
+  dailyStreak: number;
+  goalCompletionRate: number;
+  weeklyProductivity: Record<string, number>; // {"Pzt":3, "Sal":5, ...}
 }
+
